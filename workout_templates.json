@@ -1,0 +1,33 @@
+{
+  "Default": {
+    "Push": [
+      "Flat Dumbbell Bench Press",
+      "Incline Dumbbell Press",
+      "Seated Dumbbell Shoulder Press",
+      "Incline Dumbbell Fly",
+      "Dumbbell Tricep Extension (lying)"
+    ],
+    "Pull": [
+      "Single-Arm Dumbbell Row",
+      "Incline Dumbbell Row (chest supported)",
+      "Incline Dumbbell Curl",
+      "Hammer Curl",
+      "Dumbbell Pullover",
+      "Reverse Fly (optional finisher)"
+    ],
+    "Leg 1": [
+      "Step-Ups on Bench",
+      "Bulgarian Split Squats",
+      "Glute Bridges / Hip Thrusts",
+      "Seated Leg Extensions (band)",
+      "Calf Raises"
+    ],
+    "Leg 2": [
+      "Romanian Deadlift with Dumbbells",
+      "Lateral Step-Ups",
+      "Reverse Lunges",
+      "Single-Leg Glute Bridge",
+      "Terminal Knee Extensions (band)"
+    ]
+  }
+}

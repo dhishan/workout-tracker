@@ -1,0 +1,10 @@
+streamlit
+pandas
+matplotlib
+seaborn
+# Optional for Google OAuth (set AUTH_PROVIDER=google_oauth)
+authlib
+# Optional for verifying Google ID tokens securely
+google-auth
+google-auth-oauthlib
+dotenv
