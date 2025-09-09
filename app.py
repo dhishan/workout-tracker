@@ -71,8 +71,20 @@ st.title("🏋️ Workout Tracker")
 from auth import render_local_auth as _local_renderer
 from auth import render_google_oauth as _google_renderer
 
-AUTH_RENDERERS = {'local': lambda: _local_renderer(create_user, authenticate), 'google_oauth': _google_renderer}
-AUTH_RENDERERS.get(AUTH_PROVIDER, AUTH_RENDERERS['local'])()
+AUTH_RENDERERS = {
+    'local': lambda: _local_renderer(create_user, authenticate),
+    'google_oauth': _google_renderer
+}
+
+# If google_oauth is selected, render Google button first, then (if still not logged in) show local login/register.
+if AUTH_PROVIDER == 'google_oauth':
+    _google_renderer()
+    if not st.session_state.get("user_id"):
+        st.markdown("---")
+        st.caption("Or use local account:")
+        _local_renderer(create_user, authenticate)
+else:
+    _local_renderer(create_user, authenticate)
 
 # Logged-in banner and logout
 st.caption(f"Logged in as {st.session_state.username}")
