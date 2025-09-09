@@ -4,7 +4,7 @@ import pandas as pd
 import json
 import secrets
 import hashlib
-from datetime import datetime
+from datetime import datetime, timedelta
 import logging
 from config import DB_FILE, LOG_FILE, TEMPLATE_FILE
 
@@ -72,6 +72,19 @@ def init_db():
         pwd = secrets.token_hex(8)
         ph = hashlib.pbkdf2_hmac('sha256', pwd.encode(), salt.encode(), 100_000).hex()
         c.execute("INSERT OR IGNORE INTO users(id, username, password_hash, salt, created_at, provider) VALUES (1,?,?,?,?,?)", ("default", ph, salt, datetime.utcnow().isoformat(), 'local'))
+    # Sessions table for persistent login
+    c.execute(
+        """
+        CREATE TABLE IF NOT EXISTS sessions (
+            token TEXT PRIMARY KEY,
+            user_id INTEGER NOT NULL,
+            created_at TEXT NOT NULL,
+            expires_at TEXT NOT NULL,
+            FOREIGN KEY(user_id) REFERENCES users(id)
+        )
+        """
+    )
+    c.execute("CREATE INDEX IF NOT EXISTS idx_sessions_user ON sessions(user_id)")
     conn.commit()
     conn.close()
     logger.info("Database initialized / migrated")
@@ -180,3 +193,38 @@ def add_exercise(day_type: str, exercise: str):
         conn.close()
         logger.error("Add exercise failed: %s", e)
         return False, str(e)
+
+
+# ---------------- Session Helpers -----------------
+def create_session_token(user_id: int, days_valid: int = 7) -> str:
+    token = secrets.token_urlsafe(32)
+    now = datetime.utcnow()
+    exp = now + timedelta(days=days_valid)
+    conn = sqlite3.connect(DB_FILE)
+    c = conn.cursor()
+    c.execute("INSERT INTO sessions(token, user_id, created_at, expires_at) VALUES (?,?,?,?)", (token, user_id, now.isoformat(), exp.isoformat()))
+    conn.commit(); conn.close()
+    logger.info("Session created user=%s exp=%s", user_id, exp.isoformat())
+    return token
+
+
+def get_user_by_session_token(token: str):
+    if not token:
+        return None, None
+    conn = sqlite3.connect(DB_FILE)
+    c = conn.cursor()
+    c.execute("SELECT user_id, expires_at FROM sessions WHERE token=?", (token,))
+    row = c.fetchone()
+    if not row:
+        conn.close(); return None, None
+    user_id, expires_at = row
+    if datetime.utcnow() > datetime.fromisoformat(expires_at):
+        c.execute("DELETE FROM sessions WHERE token=?", (token,))
+        conn.commit(); conn.close()
+        logger.info("Expired session purged token=%s", token[:8])
+        return None, None
+    c.execute("SELECT username FROM users WHERE id=?", (user_id,))
+    u = c.fetchone(); conn.close()
+    if not u:
+        return None, None
+    return user_id, u[0]

@@ -6,6 +6,7 @@ import logging
 from datetime import datetime
 import streamlit as st
 from config import DB_FILE
+from db_storage import create_session_token, get_user_by_session_token
 
 logger = logging.getLogger(__name__)
 
@@ -58,6 +59,14 @@ def authenticate(username: str, password: str):
 def ensure_session_state():
     for k, v in {"user_id": None, "username": None}.items():
         st.session_state.setdefault(k, v)
+    # Attempt cookie based restore (Streamlit has no native cookie API; emulate via query params token)
+    if not st.session_state.get("user_id"):
+        token = st.query_params.get("session")
+        if token:
+            uid, uname = get_user_by_session_token(token)
+            if uid:
+                st.session_state.user_id = uid
+                st.session_state.username = uname
 
 
 def render_local_auth(create_user_fn, authenticate_fn):
@@ -72,6 +81,8 @@ def render_local_auth(create_user_fn, authenticate_fn):
                 if ok:
                     st.session_state.user_id = uid
                     st.session_state.username = login_user
+                    token = create_session_token(uid)
+                    st.query_params["session"] = token
                     st.rerun()
                 else:
                     st.error(msg)
@@ -167,5 +178,7 @@ def render_google_oauth():
     conn.close()
     st.session_state.user_id = uid
     st.session_state.username = email
+    token = create_session_token(uid)
+    st.query_params["session"] = token
     logger.info("Google OAuth login success email=%s", email)
     st.query_params.clear(); st.rerun()
