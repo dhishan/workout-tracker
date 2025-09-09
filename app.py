@@ -3,7 +3,7 @@ import pandas as pd
 from datetime import date
 import os
 from logging_config import setup_logging
-from config import AUTH_PROVIDER, DB_FILE, TEMPLATE_FILE, APP_LOG_PATH
+from config import AUTH_PROVIDER, DB_FILE, TEMPLATE_FILE
 from db_storage import (
     init_db, migrate_csv_to_db, migrate_templates_json_to_db,
     load_log as load_log_db, add_workout as add_workout_db,
@@ -81,7 +81,7 @@ if st.button("Logout"):
     st.session_state.username = None
     st.rerun()
 
-tab1, tab2, tab3, tab4 = st.tabs(["Log Workout", "View History", "Manage Templates", "Logs"])
+tab1, tab2, tab3 = st.tabs(["Log Workout", "View History", "Manage Templates"])
 
 with tab1:
     st.header("Log a Workout")
@@ -177,16 +177,3 @@ with tab3:
         for dt in day_types:
             exs = get_exercises(dt)
             st.markdown(f"**{dt}**: {', '.join(exs) if exs else '—'}")
-
-with tab4:
-    st.header("Application Logs")
-    if os.path.exists(APP_LOG_PATH):
-        with open(APP_LOG_PATH, 'r') as f:
-            # Tail last 400 lines
-            from collections import deque
-            lines = deque(f, maxlen=400)
-        st.text("".join(lines))
-        if st.button("Refresh Logs"):
-            st.rerun()
-    else:
-        st.info("Log file not found yet.")
